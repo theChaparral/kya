@@ -82,12 +82,13 @@ fn kya_cfg_path() -> PathBuf {
 }
 
 fn first_run() {
-    let cfg_dir = kya_cfg_path();
-    let cfg_dir_s = cfg_dir.to_str().unwrap();
+    let cfg_file = kya_cfg_path();
+    let cfg_file_s = cfg_file.to_str().unwrap();
 
-    let mut f = File::create(cfg_dir.clone()).unwrap();
+    std::fs::remove_file(cfg_file.clone()).ok();
+    let mut f = File::create(cfg_file.clone()).unwrap();
     f.write(b"access_token = \"\"\ndirectory = \"\"").unwrap();
-    println!("Created kya configuration file: {}", cfg_dir_s);
+    println!("Created kya configuration file: {}", cfg_file_s);
 }
 
 fn run_kya(api_key: &str, directory: &str) {
