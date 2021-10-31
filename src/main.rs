@@ -119,7 +119,7 @@ fn run_kya(api_key: &str) {
 
 #[derive(Deserialize)]
 struct KyaConfig {
-    pub api_key: String,
+    pub access_token: String,
 }
 
 fn create_user_unit() {
@@ -137,14 +137,15 @@ fn create_user_unit() {
                 let mut service_file = File::create(service_file_path).unwrap();
                 let kya_service = kya_service::KYA_SERVICE.as_bytes();
                 service_file.write(kya_service).unwrap();
+
+                println!("User Unit created successfully!");
+                println!("Use the following commands to enable and start the service:\n");
+                println!("systemctl --user enable kya");
+                println!("systemctl --user start kya\n");
             }
         }
         None => panic!("No home directory found!"),
     }
-    println!("User Unit created successfully!");
-    println!("Use the following commands to enable and start the service:\n");
-    println!("systemctl --user enable kya");
-    println!("systemctl --user start kya\n");
 }
 
 fn main() {
@@ -156,6 +157,15 @@ fn main() {
             create_user_unit();
             first_run();
             return;
+        } else if arg == "--help" {
+            println!("Kya for Gyazo.\n");
+            println!("--first-run");
+            println!("\tWrites a configuration file in the .config directory and creates a");
+            println!("\tsystemd user service in the .config/systemd directory.\n");
+            println!("Use the following commands to enable and start the service:\n");
+            println!("systemctl --user enable kya");
+            println!("systemctl --user start kya\n");
+            return;
         }
     }
 
@@ -164,10 +174,10 @@ fn main() {
     match cfg_file {
         Ok(cf) => {
             let cfg: KyaConfig = toml::from_str(&cf).unwrap();
-            if cfg.api_key == "" {
+            if cfg.access_token == "" {
                 panic!("Error! Gyazo access token not set!");
             }
-            run_kya(cfg.api_key.as_str());
+            run_kya(cfg.access_token.as_str());
         }
         Err(_) => {
             first_run();
