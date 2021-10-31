@@ -1,0 +1,11 @@
+[package]
+name = "kya"
+version = "0.1.0"
+edition = "2021"
+description = "Watches for new screenshots and sends them to Gyazo"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+notify = "4.0"
+curl = "0.4"
