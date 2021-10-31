@@ -2,14 +2,14 @@ use dirs::home_dir;
 use lazy_static::lazy_static;
 use notify::{watcher, RecursiveMode, Watcher};
 use regex::Regex;
-use toml::Value;
+use serde_derive::Deserialize;
 use std::fs::File;
 use std::io::{stdout, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::mpsc::channel;
 use std::time::Duration;
-use serde_derive::Deserialize;
+use toml::Value;
 
 mod kya_service;
 
@@ -122,31 +122,38 @@ struct KyaConfig {
     pub api_key: String,
 }
 
+fn create_user_unit() {
+    let home_dir = home_dir();
+    match home_dir {
+        Some(home_dir) => {
+            let mut user_dir = home_dir.clone();
+            user_dir.push(Path::new(".config/systemd/user"));
+            std::fs::create_dir_all(user_dir.clone()).unwrap();
+
+            let mut service_file_path = user_dir.clone();
+            service_file_path.push("kya.service");
+
+            if !service_file_path.exists() {
+                let mut service_file = File::create(service_file_path).unwrap();
+                let kya_service = kya_service::KYA_SERVICE.as_bytes();
+                service_file.write(kya_service).unwrap();
+            }
+        }
+        None => panic!("No home directory found!"),
+    }
+    println!("User Unit created successfully!");
+    println!("Use the following commands to enable and start the service:\n");
+    println!("systemctl --user enable kya");
+    println!("systemctl --user start kya\n");
+}
+
 fn main() {
     for arg in std::env::args() {
         if arg == "--create-user-unit" {
-            let home_dir = home_dir();
-            match home_dir {
-                Some(home_dir) => {
-                    let mut user_dir = home_dir.clone();
-                    user_dir.push(Path::new(".config/systemd/user"));
-                    std::fs::create_dir_all(user_dir.clone()).unwrap();
-
-                    let mut service_file_path = user_dir.clone();
-                    service_file_path.push("kya.service");
-
-                    let mut service_file = File::create(service_file_path).unwrap();
-                    let kya_service = kya_service::KYA_SERVICE.as_bytes();
-                    service_file.write(kya_service).unwrap();
-                }
-                None => panic!("No home directory found!"),
-            }
-            println!("User Unit created successfully!");
-            println!("Use the following commands to enable and start the service:\n");
-            println!("systemctl --user enable kya");
-            println!("systemctl --user start kya\n");
+            create_user_unit();
             return;
         } else if arg == "--first-run" {
+            create_user_unit();
             first_run();
             return;
         }
@@ -161,11 +168,10 @@ fn main() {
                 panic!("Error! Gyazo access token not set!");
             }
             run_kya(cfg.api_key.as_str());
-        },
+        }
         Err(_) => {
             first_run();
             return;
-        },
+        }
     }
-
 }
