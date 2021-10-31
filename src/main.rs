@@ -96,9 +96,7 @@ fn run_kya(api_key: &str, directory: &str) {
 
     let mut watcher = watcher(tx, Duration::from_secs(4)).unwrap();
 
-    watcher
-        .watch(directory, RecursiveMode::Recursive)
-        .unwrap();
+    watcher.watch(directory, RecursiveMode::Recursive).unwrap();
 
     println!("Kya started.");
     println!("Listening for new screenshots...");
@@ -134,17 +132,29 @@ fn create_user_unit() {
             let mut service_file_path = user_dir.clone();
             service_file_path.push("kya.service");
 
-            if !service_file_path.exists() {
-                let mut service_file = File::create(service_file_path).unwrap();
-                service_file.write(kya_service::KYA_SERVICE_FIRST_HALF.as_bytes()).unwrap();
-                service_file.write(std::env::current_exe().unwrap().to_str().unwrap().as_bytes()).unwrap();
-                service_file.write(kya_service::KYA_SERVICE_SECOND_HALF.as_bytes()).unwrap();
+            std::fs::remove_file(service_file_path.clone()).unwrap();
+            let mut service_file = File::create(service_file_path).unwrap();
+            service_file
+                .write(kya_service::KYA_SERVICE_FIRST_HALF.as_bytes())
+                .unwrap();
 
-                println!("User Unit created successfully!");
-                println!("Use the following commands to enable and start the service:\n");
-                println!("systemctl --user enable kya");
-                println!("systemctl --user start kya\n");
-            }
+            service_file
+                .write(
+                    std::env::current_exe()
+                        .unwrap()
+                        .to_str()
+                        .unwrap()
+                        .as_bytes(),
+                )
+                .unwrap();
+            service_file
+                .write(kya_service::KYA_SERVICE_SECOND_HALF.as_bytes())
+                .unwrap();
+
+            println!("User Unit created successfully!");
+            println!("Use the following commands to enable and start the service:\n");
+            println!("systemctl --user enable kya");
+            println!("systemctl --user start kya\n");
         }
         None => panic!("No home directory found!"),
     }
