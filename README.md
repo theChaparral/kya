@@ -12,13 +12,19 @@ Perform the first-run setup:
 
 `kya-for-gyazo --first-run`
 
-Then edit the configuration file. Kya requires an access token from the Gyazo API.
+Then edit the configuration file at `.config/kya` in your home directory.
+Kya requires an access token from the Gyazo API.
 Receiving an access token is fast and painless, simply go to
 [the developer page](https://gyazo.com/oauth/applications/) and create a new app.
 You can leave the callback URL as "http://example.com" or whatever you like.
 
-Edit the config file with the access token and provide the location of where screenshots
-are saved. Kya will watch for any new files that show up **while Kya is running.**
+Edit the configuration TOML file with the access token and provide the location of where screenshots
+are saved. Kya will watch for any new files that show up **while Kya is running.** Configuration example:
+
+```
+access_token = "SomethingSomething"
+directory = "/home/gert/Pictures/Screenshot"
+```
 
 Systemd user Unit
 =================
