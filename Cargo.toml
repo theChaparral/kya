@@ -1,6 +1,6 @@
 [package]
 name = "kya"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/gert7/kya"
@@ -17,3 +17,7 @@ dirs = "4.0"
 toml = "0.5"
 serde = "1.0"
 serde_derive = "1.0"
+
+[[bin]]
+name = "kya-for-gyazo"
+path = "src/main.rs"
