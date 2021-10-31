@@ -1,0 +1,8 @@
+[Unit]
+Description=Kya Gyazo Daemon
+
+[Service]
+ExecStart=/home/gert/bin/kya
+
+[Install]
+WantedBy=default.target
