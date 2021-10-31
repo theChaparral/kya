@@ -135,8 +135,9 @@ fn create_user_unit() {
 
             if !service_file_path.exists() {
                 let mut service_file = File::create(service_file_path).unwrap();
-                let kya_service = kya_service::KYA_SERVICE.as_bytes();
-                service_file.write(kya_service).unwrap();
+                service_file.write(kya_service::KYA_SERVICE_FIRST_HALF.as_bytes()).unwrap();
+                service_file.write(std::env::current_exe().unwrap().to_str().unwrap().as_bytes()).unwrap();
+                service_file.write(kya_service::KYA_SERVICE_SECOND_HALF.as_bytes()).unwrap();
 
                 println!("User Unit created successfully!");
                 println!("Use the following commands to enable and start the service:\n");
