@@ -28,7 +28,8 @@ directory, which is one of the locations where user services are saved. The kya 
 enabled and launched without root privileges:
 
 ```systemctl --user start kya
-systemctl --user enable kya```
+systemctl --user enable kya
+```
 
 If Kya is unresponsive, you might be able to find help in the systemd logs:
 
