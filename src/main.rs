@@ -4,12 +4,11 @@ use notify::{watcher, RecursiveMode, Watcher};
 use regex::Regex;
 use serde_derive::Deserialize;
 use std::fs::File;
-use std::io::{stdout, Write};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::mpsc::channel;
 use std::time::Duration;
-use toml::Value;
 
 mod kya_service;
 
@@ -87,17 +86,17 @@ fn first_run() {
     let cfg_dir_s = cfg_dir.to_str().unwrap();
 
     let mut f = File::create(cfg_dir.clone()).unwrap();
-    f.write(b"access_token = \"\"").unwrap();
+    f.write(b"access_token = \"\"\ndirectory = \"\"").unwrap();
     println!("Created kya configuration file: {}", cfg_dir_s);
 }
 
-fn run_kya(api_key: &str) {
+fn run_kya(api_key: &str, directory: &str) {
     let (tx, rx) = channel();
 
     let mut watcher = watcher(tx, Duration::from_secs(4)).unwrap();
 
     watcher
-        .watch("/home/gert/Pictures/Screenshots", RecursiveMode::Recursive)
+        .watch(directory, RecursiveMode::Recursive)
         .unwrap();
 
     println!("Kya started.");
@@ -120,6 +119,7 @@ fn run_kya(api_key: &str) {
 #[derive(Deserialize)]
 struct KyaConfig {
     pub access_token: String,
+    pub directory: String,
 }
 
 fn create_user_unit() {
@@ -177,7 +177,10 @@ fn main() {
             if cfg.access_token == "" {
                 panic!("Error! Gyazo access token not set!");
             }
-            run_kya(cfg.access_token.as_str());
+            if cfg.directory == "" {
+                panic!("Error! Screenshot directory not set!")
+            }
+            run_kya(cfg.access_token.as_str(), cfg.directory.as_str());
         }
         Err(_) => {
             first_run();
