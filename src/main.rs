@@ -16,7 +16,8 @@ fn open_gyazo_link(s: &str) {
     lazy_static! {
         static ref RE: Regex = Regex::new("\"permalink_url\":\"(.+?)\"").unwrap();
     }
-    let caps = RE.captures(s).unwrap();
+    println!("{}", s);
+    let caps = RE.captures(s).expect("Gyazo didn't provide a URL! Check your access token.");
     let result = caps.get(1);
     match result {
         Some(v) => {
