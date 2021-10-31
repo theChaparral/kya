@@ -1,8 +1,0 @@
-[Unit]
-Description=Kya Gyazo Daemon
-
-[Service]
-ExecStart=/home/gert/.config/systemd/user/kya.service
-
-[Install]
-WantedBy=default.target

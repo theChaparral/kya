@@ -1,5 +1,5 @@
 pkgname=kya
-pkgver=0.1.0
+pkgver=0.1.7
 pkgrel=1
 makedepends=('rust' 'cargo')
 arch=('i686' 'x86_64' 'armv6h' 'armv7h')
@@ -12,5 +12,8 @@ build() {
 
 package() {
     cd $srcdir
-    cargo install --root="$pkgdir" --git=https://github.com/gert7/kya
+    echo $pkgdir
+    cargo install --root="$pkgdir/usr" --git=https://github.com/gert7/kya
+    rm $pkgdir/usr/.crates.toml
+    rm $pkgdir/usr/.crates2.json
 }

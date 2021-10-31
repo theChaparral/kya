@@ -1,5 +1,5 @@
 File watcher that sends images to Gyazo. This allows you to use Gyazo with screenshot
-programs that are more usable.
+programs that are more usable, such as [Spectacle](https://apps.kde.org/spectacle/)
 
 Installation
 ============
