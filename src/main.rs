@@ -167,17 +167,17 @@ fn main() {
             create_user_unit();
             return;
         } else if arg == "--first-run" {
-            create_user_unit();
+            // create_user_unit();
             first_run();
             return;
         } else if arg == "--help" {
             println!("Kya for Gyazo.\n");
             println!("--first-run");
-            println!("\tWrites a configuration file in the .config directory and creates a");
-            println!("\tsystemd user service in the .config/systemd directory.\n");
-            println!("Use the following commands to enable and start the service:\n");
-            println!("systemctl --user enable kya");
-            println!("systemctl --user start kya\n");
+            println!("\tWrites a configuration file in the .config directory.");
+            // println!("\tsystemd user service in the .config/systemd directory.\n");
+            // println!("Use the following commands to enable and start the service:\n");
+            // println!("systemctl --user enable kya");
+            // println!("systemctl --user start kya\n");
             return;
         }
     }
