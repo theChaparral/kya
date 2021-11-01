@@ -17,6 +17,8 @@ dirs = "4.0"
 toml = "0.5"
 serde = "1.0"
 serde_derive = "1.0"
+whoami = "1.1"
+fs2 = "0.4"
 
 [profile.release]
 opt-level = "s"

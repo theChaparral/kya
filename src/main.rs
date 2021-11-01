@@ -1,4 +1,5 @@
 use dirs::home_dir;
+use fs2::FileExt;
 use lazy_static::lazy_static;
 use notify::{watcher, RecursiveMode, Watcher};
 use regex::Regex;
@@ -17,7 +18,9 @@ fn open_gyazo_link(s: &str) {
         static ref RE: Regex = Regex::new("\"permalink_url\":\"(.+?)\"").unwrap();
     }
     println!("{}", s);
-    let caps = RE.captures(s).expect("Gyazo didn't provide a URL! Check your access token.");
+    let caps = RE
+        .captures(s)
+        .expect("Gyazo didn't provide a URL! Check your access token.");
     let result = caps.get(1);
     match result {
         Some(v) => {
@@ -182,6 +185,26 @@ fn main() {
         }
     }
 
+    let lockfile_name = format!("/tmp/kya-for-gyazo-{}", whoami::username());
+    let lockfile = File::create(lockfile_name);
+
+    match lockfile {
+        Ok(_) => (),
+        Err(_error) => {
+            std::process::exit(0);
+        }
+    }
+
+    let mut lockfile = lockfile.unwrap();
+
+    let lock = lockfile.try_lock_exclusive();
+    lockfile.write(b"A").unwrap();
+    if lock.is_err() {
+        eprintln!("An instance of kya is already running!");
+        eprintln!("Check `lsof | grep kya-for-gyazo` for any running PIDs.");
+        std::process::exit(0);
+    }
+
     let cfg_file_location = kya_cfg_path();
     let cfg_file = std::fs::read_to_string(cfg_file_location);
     match cfg_file {
@@ -194,6 +217,10 @@ fn main() {
                 panic!("Error! Screenshot directory not set!")
             }
             run_kya(cfg.access_token.as_str(), cfg.directory.as_str());
+
+            lockfile
+                .write(b"rub a dub dub thanks for the grub")
+                .unwrap();
         }
         Err(_) => {
             first_run();
