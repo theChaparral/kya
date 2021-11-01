@@ -1,5 +1,5 @@
-File watcher that sends images to Gyazo. This allows you to use Gyazo with screenshot
-programs that are more usable, such as [Spectacle](https://apps.kde.org/spectacle/)
+File watcher for Linux that sends images to Gyazo. This allows you to use Gyazo with screenshot
+programs that are more usable, such as [Spectacle](https://apps.kde.org/spectacle/).
 
 Installation
 ============
@@ -24,4 +24,7 @@ are saved. Kya will watch for any new files that show up **while Kya is running.
 ```
 access_token = "SomethingSomething"
 directory = "/home/gert/Pictures/Screenshot"
+open_in_browser = true
 ```
+
+If you don't want the daemon to open the new image link in the browser, set `open_in_browser` to false.

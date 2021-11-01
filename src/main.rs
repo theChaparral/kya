@@ -18,9 +18,16 @@ fn open_gyazo_link(s: &str) {
         static ref RE: Regex = Regex::new("\"permalink_url\":\"(.+?)\"").unwrap();
     }
     println!("{}", s);
-    let caps = RE
-        .captures(s)
-        .expect("Gyazo didn't provide a URL! Check your access token.");
+    let caps = RE.captures(s);
+
+    let caps = match caps {
+        Some(v) => v,
+        None => {
+            eprintln!("Gyazo didn't provide a URL! Please check your access token.");
+            return;
+        }
+    };
+
     let result = caps.get(1);
     match result {
         Some(v) => {
@@ -32,7 +39,7 @@ fn open_gyazo_link(s: &str) {
     }
 }
 
-fn upload_file(path: PathBuf, api_key: &str) {
+fn upload_file(path: PathBuf, cfg: &KyaConfig) {
     let path_s = path.to_str();
     match path_s {
         Some(v) => {
@@ -41,7 +48,7 @@ fn upload_file(path: PathBuf, api_key: &str) {
             let image_data = format!("imagedata=@{}", v);
             println!("{}", image_data);
 
-            let access_token_str = format!("access_token={}", api_key);
+            let access_token_str = format!("access_token={}", cfg.access_token);
 
             let output = Command::new("curl")
                 .arg("-i")
@@ -57,7 +64,11 @@ fn upload_file(path: PathBuf, api_key: &str) {
 
             let ret = output.stdout;
             match std::str::from_utf8(&ret.as_slice()) {
-                Ok(retout) => open_gyazo_link(retout),
+                Ok(retout) => {
+                    if cfg.open_in_browser {
+                        open_gyazo_link(retout)
+                    }
+                }
                 Err(e) => panic!("{}", e),
             };
 
@@ -91,16 +102,20 @@ fn first_run() {
 
     std::fs::remove_file(cfg_file.clone()).ok();
     let mut f = File::create(cfg_file.clone()).unwrap();
-    f.write(b"access_token = \"\"\ndirectory = \"\"").unwrap();
+    f.write(b"access_token = \"\"\n").unwrap();
+    f.write(b"directory = \"\"\n").unwrap();
+    f.write(b"open_in_browser = true\n").unwrap();
     println!("Created kya configuration file: {}", cfg_file_s);
 }
 
-fn run_kya(api_key: &str, directory: &str) {
+fn run_kya(cfg: &KyaConfig) {
     let (tx, rx) = channel();
 
     let mut watcher = watcher(tx, Duration::from_secs(4)).unwrap();
 
-    watcher.watch(directory, RecursiveMode::Recursive).unwrap();
+    watcher
+        .watch(cfg.directory.as_str(), RecursiveMode::Recursive)
+        .unwrap();
 
     println!("Kya started.");
     println!("Listening for new screenshots...");
@@ -110,7 +125,7 @@ fn run_kya(api_key: &str, directory: &str) {
             Ok(event) => {
                 println!("{:?}", event);
                 match event {
-                    notify::DebouncedEvent::Create(v) => upload_file(v, api_key),
+                    notify::DebouncedEvent::Create(v) => upload_file(v, cfg),
                     _ => (),
                 }
             }
@@ -123,6 +138,7 @@ fn run_kya(api_key: &str, directory: &str) {
 struct KyaConfig {
     pub access_token: String,
     pub directory: String,
+    pub open_in_browser: bool,
 }
 
 fn create_user_unit() {
@@ -216,7 +232,7 @@ fn main() {
             if cfg.directory == "" {
                 panic!("Error! Screenshot directory not set!")
             }
-            run_kya(cfg.access_token.as_str(), cfg.directory.as_str());
+            run_kya(&cfg);
 
             lockfile
                 .write(b"rub a dub dub thanks for the grub")
