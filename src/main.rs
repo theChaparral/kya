@@ -217,7 +217,7 @@ fn main() {
     lockfile.write(b"A").unwrap();
     if lock.is_err() {
         eprintln!("An instance of kya is already running!");
-        eprintln!("Check `lsof | grep kya-for-gyazo` for any running PIDs.");
+        eprintln!("Check `ps aux | grep kya-for-gyazo` for any running PIDs.");
         std::process::exit(0);
     }
 
