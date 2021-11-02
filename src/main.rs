@@ -141,6 +141,14 @@ struct KyaConfig {
     pub open_in_browser: bool,
 }
 
+fn exe_absolute_path() -> String {
+    std::env::current_exe()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_owned()
+}
+
 fn create_user_unit() {
     let home_dir = home_dir();
     match home_dir {
@@ -159,13 +167,7 @@ fn create_user_unit() {
                 .unwrap();
 
             service_file
-                .write(
-                    std::env::current_exe()
-                        .unwrap()
-                        .to_str()
-                        .unwrap()
-                        .as_bytes(),
-                )
+                .write(exe_absolute_path().as_bytes())
                 .unwrap();
             service_file
                 .write(kya_service::KYA_SERVICE_SECOND_HALF.as_bytes())
@@ -177,6 +179,29 @@ fn create_user_unit() {
             println!("systemctl --user start kya\n");
         }
         None => panic!("No home directory found!"),
+    }
+}
+
+fn try_lockfile() -> Option<File> {
+    let lockfile_name = format!("/tmp/kya-for-gyazo-{}", whoami::username());
+    let lockfile = File::create(lockfile_name);
+
+    match lockfile {
+        Ok(_) => (),
+        Err(_error) => {
+            std::process::exit(0);
+        }
+    }
+
+    let mut lockfile = lockfile.unwrap();
+
+    let lock = lockfile.try_lock_exclusive();
+    let pid_text = format!("{}", std::process::id());
+    lockfile.write(pid_text.as_bytes()).unwrap();
+
+    match lock {
+        Ok(_) => Some(lockfile),
+        Err(_) => None,
     }
 }
 
@@ -201,25 +226,14 @@ fn main() {
         }
     }
 
-    let lockfile_name = format!("/tmp/kya-for-gyazo-{}", whoami::username());
-    let lockfile = File::create(lockfile_name);
+    let lockfile = try_lockfile();
 
-    match lockfile {
-        Ok(_) => (),
-        Err(_error) => {
-            std::process::exit(0);
-        }
-    }
-
-    let mut lockfile = lockfile.unwrap();
-
-    let lock = lockfile.try_lock_exclusive();
-    lockfile.write(b"A").unwrap();
-    if lock.is_err() {
+    if lockfile.is_none() {
         eprintln!("An instance of kya is already running!");
         eprintln!("Check `ps aux | grep kya-for-gyazo` for any running PIDs.");
         std::process::exit(0);
-    }
+    };
+    let mut lockfile = lockfile.unwrap();
 
     let cfg_file_location = kya_cfg_path();
     let cfg_file = std::fs::read_to_string(cfg_file_location);
