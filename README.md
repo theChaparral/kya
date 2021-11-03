@@ -28,3 +28,16 @@ open_in_browser = true
 ```
 
 If you don't want the daemon to open the new image link in the browser, set `open_in_browser` to false.
+
+Automatically starting Kya
+==========================
+
+Kya is designed to be started automatically, such as by KDE autostart, or GNOME startup applications.
+You can also add it to .xinitrc, for example alongside KDE:
+
+```
+kya-for-gyazo &
+exec startplasma-x11
+```
+
+Kya does a check not to run multiple instances of itself at once.

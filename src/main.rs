@@ -111,7 +111,7 @@ fn first_run() {
 fn run_kya(cfg: &KyaConfig) {
     let (tx, rx) = channel();
 
-    let mut watcher = watcher(tx, Duration::from_secs(4)).unwrap();
+    let mut watcher = watcher(tx, Duration::from_secs(1)).unwrap();
 
     watcher
         .watch(cfg.directory.as_str(), RecursiveMode::Recursive)
