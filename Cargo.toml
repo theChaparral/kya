@@ -13,11 +13,12 @@ notify = "4.0"
 regex = "1.5"
 lazy_static = "1.4"
 dirs = "4.0"
-toml = "0.5"
+toml = "0.7"
 serde = "1.0"
 serde_derive = "1.0"
 whoami = "1.1"
 fs2 = "0.4"
+color-eyre = "0.6.2"
 
 [profile.release]
 opt-level = "s"

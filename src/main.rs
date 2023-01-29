@@ -1,3 +1,4 @@
+use color_eyre::Result;
 use dirs::home_dir;
 use fs2::FileExt;
 use lazy_static::lazy_static;
@@ -5,9 +6,9 @@ use notify::{watcher, RecursiveMode, Watcher};
 use regex::Regex;
 use serde_derive::Deserialize;
 use std::fs::File;
-use std::io::Write;
+use std::io::{self, Write};
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{exit, Command};
 use std::sync::mpsc::channel;
 use std::time::Duration;
 
@@ -36,10 +37,10 @@ fn open_gyazo_link(s: &str) {
             Command::new("xdg-open").arg(vs).spawn().ok();
         }
         None => eprintln!("Error: Gyazo did not provide url!"),
-    }
+    };
 }
 
-fn upload_file(path: PathBuf, cfg: &KyaConfig) {
+fn upload_file(path: PathBuf, cfg: &KyaConfig) -> color_eyre::Result<()> {
     let path_s = path.to_str();
     match path_s {
         Some(v) => {
@@ -63,14 +64,10 @@ fn upload_file(path: PathBuf, cfg: &KyaConfig) {
             println!("curl: {}", output.status);
 
             let ret = output.stdout;
-            match std::str::from_utf8(&ret.as_slice()) {
-                Ok(retout) => {
-                    if cfg.open_in_browser {
-                        open_gyazo_link(retout)
-                    }
-                }
-                Err(e) => panic!("{}", e),
-            };
+            let retout = std::str::from_utf8(&ret.as_slice())?;
+            if cfg.open_in_browser {
+                open_gyazo_link(retout)
+            }
 
             let err = output.stderr;
             match std::str::from_utf8(&err.as_slice()) {
@@ -80,42 +77,44 @@ fn upload_file(path: PathBuf, cfg: &KyaConfig) {
         }
         None => (),
     }
+    Ok(())
 }
 
-fn kya_cfg_path() -> PathBuf {
+fn kya_cfg_path() -> io::Result<PathBuf> {
     let home_dir = home_dir();
     match home_dir {
         Some(home_dir) => {
             let mut cfg_dir = home_dir.clone();
             cfg_dir.push(".config");
-            std::fs::create_dir_all(cfg_dir.clone()).unwrap();
+            std::fs::create_dir_all(cfg_dir.clone())?;
             cfg_dir.push("kya");
-            cfg_dir
+            Ok(cfg_dir)
         }
         None => panic!("No home directory found!"),
     }
 }
 
-fn first_run() {
-    let cfg_file = kya_cfg_path();
-    let cfg_file_s = cfg_file.to_str().unwrap();
+fn first_run() -> io::Result<()> {
+    let cfg_file = kya_cfg_path()?;
+    let cfg_file_s = cfg_file
+        .to_str()
+        .expect("Can't convert cfg file name to string");
 
-    std::fs::remove_file(cfg_file.clone()).ok();
-    let mut f = File::create(cfg_file.clone()).unwrap();
-    f.write(b"access_token = \"\"\n").unwrap();
-    f.write(b"directory = \"\"\n").unwrap();
-    f.write(b"open_in_browser = true\n").unwrap();
+    std::fs::remove_file(&cfg_file).ok();
+    let mut f = File::create(&cfg_file)?;
+    f.write(b"access_token = \"\"\n")?;
+    f.write(b"directory = \"\"\n")?;
+    f.write(b"open_in_browser = true\n")?;
     println!("Created kya configuration file: {}", cfg_file_s);
+    Ok(())
 }
 
-fn run_kya(cfg: &KyaConfig) {
+fn run_kya(cfg: &KyaConfig) -> Result<()> {
     let (tx, rx) = channel();
 
     let mut watcher = watcher(tx, Duration::from_secs(1)).unwrap();
 
-    watcher
-        .watch(cfg.directory.as_str(), RecursiveMode::Recursive)
-        .unwrap();
+    watcher.watch(cfg.directory.as_str(), RecursiveMode::Recursive)?;
 
     println!("Kya started.");
     println!("Listening for new screenshots...");
@@ -125,7 +124,7 @@ fn run_kya(cfg: &KyaConfig) {
             Ok(event) => {
                 println!("{:?}", event);
                 match event {
-                    notify::DebouncedEvent::Create(v) => upload_file(v, cfg),
+                    notify::DebouncedEvent::Create(v) => upload_file(v, cfg)?,
                     _ => (),
                 }
             }
@@ -141,15 +140,12 @@ struct KyaConfig {
     pub open_in_browser: bool,
 }
 
-fn exe_absolute_path() -> String {
-    std::env::current_exe()
-        .unwrap()
-        .to_str()
-        .unwrap()
-        .to_owned()
+fn exe_absolute_path() -> io::Result<String> {
+    let result = std::env::current_exe()?.to_str().unwrap().to_owned();
+    Ok(result)
 }
 
-fn create_user_unit() {
+fn create_user_unit() -> io::Result<()> {
     let home_dir = home_dir();
     match home_dir {
         Some(home_dir) => {
@@ -166,9 +162,7 @@ fn create_user_unit() {
                 .write(kya_service::KYA_SERVICE_FIRST_HALF.as_bytes())
                 .unwrap();
 
-            service_file
-                .write(exe_absolute_path().as_bytes())
-                .unwrap();
+            service_file.write(exe_absolute_path()?.as_bytes()).unwrap();
             service_file
                 .write(kya_service::KYA_SERVICE_SECOND_HALF.as_bytes())
                 .unwrap();
@@ -180,6 +174,7 @@ fn create_user_unit() {
         }
         None => panic!("No home directory found!"),
     }
+    Ok(())
 }
 
 fn try_lockfile() -> Option<File> {
@@ -205,15 +200,15 @@ fn try_lockfile() -> Option<File> {
     }
 }
 
-fn main() {
+fn main() -> color_eyre::Result<()> {
     for arg in std::env::args() {
         if arg == "--create-user-unit" {
-            create_user_unit();
-            return;
+            create_user_unit()?;
+            exit(0);
         } else if arg == "--first-run" {
             // create_user_unit();
-            first_run();
-            return;
+            first_run()?;
+            exit(0);
         } else if arg == "--help" {
             println!("Kya for Gyazo.\n");
             println!("--first-run");
@@ -222,7 +217,7 @@ fn main() {
             // println!("Use the following commands to enable and start the service:\n");
             // println!("systemctl --user enable kya");
             // println!("systemctl --user start kya\n");
-            return;
+            exit(0);
         }
     }
 
@@ -231,30 +226,29 @@ fn main() {
     if lockfile.is_none() {
         eprintln!("An instance of kya is already running!");
         eprintln!("Check `ps aux | grep kya-for-gyazo` for any running PIDs.");
-        std::process::exit(0);
+        exit(0);
     };
-    let mut lockfile = lockfile.unwrap();
+    let mut lockfile =
+        lockfile.expect("Unable to find lockfile. Check permissions for /tmp/ directory.");
 
-    let cfg_file_location = kya_cfg_path();
+    let cfg_file_location = kya_cfg_path()?;
     let cfg_file = std::fs::read_to_string(cfg_file_location);
     match cfg_file {
         Ok(cf) => {
-            let cfg: KyaConfig = toml::from_str(&cf).unwrap();
+            let cfg: KyaConfig = toml::from_str(&cf)?;
             if cfg.access_token == "" {
                 panic!("Error! Gyazo access token not set!");
             }
             if cfg.directory == "" {
                 panic!("Error! Screenshot directory not set!")
             }
-            run_kya(&cfg);
+            run_kya(&cfg)?;
 
-            lockfile
-                .write(b"rub a dub dub thanks for the grub")
-                .unwrap();
+            lockfile.write(b"rub a dub dub thanks for the grub")?;
         }
         Err(_) => {
-            first_run();
-            return;
+            first_run()?;
         }
-    }
+    };
+    Ok(())
 }
