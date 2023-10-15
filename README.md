@@ -8,6 +8,8 @@ Install using cargo.
 
 `cargo install kya`
 
+On Arch Linux install the [**kya** package](https://aur.archlinux.org/packages/kya) from AUR.
+
 Perform the first-run setup:
 
 `kya-for-gyazo --first-run`
@@ -40,4 +42,5 @@ kya-for-gyazo &
 exec startplasma-x11
 ```
 
-Kya does a check not to run multiple instances of itself at once.
+Kya does a check to prevent running multiple instances of itself at once.
+
