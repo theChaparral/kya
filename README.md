@@ -27,9 +27,11 @@ are saved. Kya will watch for any new files that show up **while Kya is running.
 access_token = "SomethingSomething"
 directory = "/home/gert/Pictures/Screenshot"
 open_in_browser = true
+delete_after_upload = false
 ```
 
 If you don't want the daemon to open the new image link in the browser, set `open_in_browser` to false.
+If you want the screenshots to be deleted automatically after upload, set `delete_after_upload` to true.
 
 Automatically starting Kya
 ==========================
