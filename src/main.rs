@@ -77,6 +77,12 @@ fn upload_file(path: PathBuf, cfg: &KyaConfig) -> color_eyre::Result<()> {
         }
         None => (),
     }
+    if cfg.delete_after_upload {
+        match std::fs::remove_file(&path) {
+            Ok(_) => println!("File {:?} removed successfully after upload", path_s),
+            Err(e) => eprintln!("Error: Couldn't remove file {:?}: {}", path_s, e),
+        }
+    }
     Ok(())
 }
 
@@ -105,6 +111,7 @@ fn first_run() -> io::Result<()> {
     f.write(b"access_token = \"\"\n")?;
     f.write(b"directory = \"\"\n")?;
     f.write(b"open_in_browser = true\n")?;
+    f.write(b"delete_after_upload = false\n")?;
     println!("Created kya configuration file: {}", cfg_file_s);
     Ok(())
 }
@@ -138,6 +145,7 @@ struct KyaConfig {
     pub access_token: String,
     pub directory: String,
     pub open_in_browser: bool,
+    pub delete_after_upload: bool,
 }
 
 fn exe_absolute_path() -> io::Result<String> {
