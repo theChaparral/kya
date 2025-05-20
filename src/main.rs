@@ -1,3 +1,4 @@
+use clap::Parser;
 use color_eyre::Result;
 use dirs::home_dir;
 use fs2::FileExt;
@@ -13,6 +14,13 @@ use std::sync::mpsc::channel;
 use std::time::Duration;
 
 mod kya_service;
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct CliArgs {
+    #[arg(short, long, help = "Delete image after successful upload")]
+    delete: bool,
+}
 
 fn open_gyazo_link(s: &str) {
     lazy_static! {
@@ -40,7 +48,7 @@ fn open_gyazo_link(s: &str) {
     };
 }
 
-fn upload_file(path: PathBuf, cfg: &KyaConfig) -> color_eyre::Result<()> {
+fn upload_file(path: PathBuf, cfg: &KyaConfig, delete_flag: bool) -> color_eyre::Result<()> {
     let path_s = path.to_str();
     match path_s {
         Some(v) => {
@@ -77,11 +85,14 @@ fn upload_file(path: PathBuf, cfg: &KyaConfig) -> color_eyre::Result<()> {
         }
         None => (),
     }
-    if cfg.delete_after_upload {
+
+    if delete_flag { // Only delete if -d is explicitly passed
         match std::fs::remove_file(&path) {
-            Ok(_) => println!("File {:?} removed successfully after upload", path_s),
-            Err(e) => eprintln!("Error: Couldn't remove file {:?}: {}", path_s, e),
+            Ok(_) => println!("File {:?} removed successfully after upload (due to -d flag).", path),
+            Err(e) => eprintln!("Error: Couldn't remove file {:?}: {}", path, e),
         }
+    } else {
+        println!("File {:?} kept after upload (default behavior, or -d flag not specified).", path);
     }
     Ok(())
 }
@@ -116,7 +127,7 @@ fn first_run() -> io::Result<()> {
     Ok(())
 }
 
-fn run_kya(cfg: &KyaConfig) -> Result<()> {
+fn run_kya(cfg: &KyaConfig, delete_flag: bool) -> Result<()> {
     let (tx, rx) = channel();
 
     let mut watcher = watcher(tx, Duration::from_secs(1)).unwrap();
@@ -131,7 +142,7 @@ fn run_kya(cfg: &KyaConfig) -> Result<()> {
             Ok(event) => {
                 println!("{:?}", event);
                 match event {
-                    notify::DebouncedEvent::Create(v) => upload_file(v, cfg)?,
+                    notify::DebouncedEvent::Create(v) => upload_file(v, cfg, delete_flag)?,
                     _ => (),
                 }
             }
@@ -209,6 +220,8 @@ fn try_lockfile() -> Option<File> {
 }
 
 fn main() -> color_eyre::Result<()> {
+    let cli_args = CliArgs::parse();
+
     for arg in std::env::args() {
         if arg == "--create-user-unit" {
             create_user_unit()?;
@@ -250,7 +263,7 @@ fn main() -> color_eyre::Result<()> {
             if cfg.directory == "" {
                 panic!("Error! Screenshot directory not set!")
             }
-            run_kya(&cfg)?;
+            run_kya(&cfg, cli_args.delete)?;
 
             lockfile.write(b"rub a dub dub thanks for the grub")?;
         }

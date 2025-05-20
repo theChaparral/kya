@@ -31,7 +31,18 @@ delete_after_upload = false
 ```
 
 If you don't want the daemon to open the new image link in the browser, set `open_in_browser` to false.
-If you want the screenshots to be deleted automatically after upload, set `delete_after_upload` to true.
+The `delete_after_upload` option in the configuration file (`true` or `false`) determines the default behavior for deleting files after upload. This behavior can be overridden for a specific run using the command-line flag described below.
+
+Command-line Options
+====================
+
+Kya supports the following command-line options:
+
+*   `-d`, `--delete`: If this flag is provided, the screenshot will be deleted from your local machine after a successful upload to Gyazo. If this flag is not provided, the image will be kept on your local machine, regardless of the `delete_after_upload` setting in the configuration file.
+*   `--first-run`: Initializes the configuration file.
+*   `--create-user-unit`: Creates a systemd user service file for automatic startup.
+*   `--help`: Displays the help message with all available command-line options.
+*   `--version`: Displays the application version.
 
 Automatically starting Kya
 ==========================
